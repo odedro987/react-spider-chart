@@ -15,6 +15,10 @@
         "plugin:storybook/recommended"
     ],
     "rules": {
-        "react/react-in-jsx-scope": "off"
+        "react/react-in-jsx-scope": "off",
+        "array-element-newline": ["error", { "ArrayExpression": "consistent" }],
+        "indent": ["error", 2],
+        "no-trailing-spaces": ["error"],
+        "semi": ["error", "never"]
     }
 }
