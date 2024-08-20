@@ -12,7 +12,7 @@ type Story = StoryObj<typeof SpiderChart>;
 export const Default: Story = {
   args: {
     radius: 100,
-    slices: 3,
+    segments: 3,
     data: [1, 0.5, 0],
   },
 }
@@ -20,7 +20,7 @@ export const Default: Story = {
 export const Circular: Story = {
   args: {
     radius: 100,
-    slices: 6,
+    segments: 6,
     innerRadius: 10,
     dataColor: "red",
     strokeWidth: 2,

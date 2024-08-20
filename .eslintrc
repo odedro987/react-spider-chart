@@ -3,6 +3,7 @@
         "jest": true,
         "browser": true
     },
+    "ignorePatterns": ["dist"],
     "root": true,
     "parser": "@typescript-eslint/parser",
     "plugins": ["@typescript-eslint"],
@@ -19,6 +20,7 @@
         "array-element-newline": ["error", { "ArrayExpression": "consistent" }],
         "indent": ["error", 2],
         "no-trailing-spaces": ["error"],
-        "semi": ["error", "never"]
+        "semi": ["error", "never"],
+        "space-infix-ops": "error"
     }
 }
