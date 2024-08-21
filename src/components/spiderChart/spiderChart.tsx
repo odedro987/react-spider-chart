@@ -188,4 +188,44 @@ export const SpiderChart = (props: SpiderChartProps) => {
   )
 }
 
+export type UseSpiderChartProps = {
+  data: number[]
+  radius: number
+  strokeWidth: number
+  centerPlacement: CenterPlacement
+  innerRadius: number
+  angleOffset: number
+}
+
+export const useSpiderChart = (props: UseSpiderChartProps) => {
+  const {data, radius, strokeWidth, centerPlacement, innerRadius, angleOffset} = props
+
+  const center = useMemo(() => radius + strokeWidth + BUFFER, [radius, strokeWidth])
+  const centerOffset = useMemo(() => {
+    switch(centerPlacement){
+    case "center": return 0
+    case 'inner': return innerRadius
+    default: return 0
+    }
+  }, [innerRadius, centerPlacement])
+
+  const [spiderPoints, circumPoints] = useMemo(() => {
+    const res: [DataPoint[], DataPoint[]] = [[], []]
+    data.forEach((value, i) => {
+      const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
+      res[0].push([
+        center + cos * ((radius - centerOffset) * value) + cos * centerOffset,
+        center + sin * ((radius - centerOffset) * value) + sin * centerOffset
+      ])
+      res[1].push([
+        center + cos * ((radius - centerOffset)) + cos * centerOffset,
+        center + sin * ((radius - centerOffset)) + sin * centerOffset
+      ])
+    })
+    return [res[0], res[1]]
+  }, [data, center, radius, centerOffset, angleOffset])
+
+  return {spiderPoints, circumPoints, center, BUFFER}
+}
+
 export default SpiderChart
