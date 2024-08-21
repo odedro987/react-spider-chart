@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react"
+import { useMemo } from "react"
 
 const BUFFER = 10
 
@@ -100,7 +100,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
 
   const spiderPointsString = useMemo(()=> spiderPoints.reduce((acc, curr) => acc + " " + curr.join(","), ""), [spiderPoints])
 
-  const ringShapes = useCallback(()=> {
+  const ringShapes = useMemo(()=> {
     if (shape === 'polygon'){
       return [...Array(rings)].map((_, i) => {
         const points = [...Array(segments)].map((_, j)=>{
@@ -122,7 +122,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
     }
   }, [angleOffset, center, centerOffset, radius, rings, segments, shape, strokeColor, strokeWidth])
 
-  const outerShape = useCallback(()=> {
+  const outerShape = useMemo(()=> {
     if (shape === 'polygon'){
       const points = data.map((_, i) => {
         const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
@@ -137,7 +137,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
     }
   }, [angleOffset, backgroundColor, center, data, radius, shape, strokeColor, strokeWidth])
 
-  const innerShape = useCallback(()=> {
+  const innerShape = useMemo(()=> {
     if (shape === 'polygon'){
       const points = data.map((_, i) => {
         const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
@@ -154,8 +154,8 @@ export const SpiderChart = (props: SpiderChartProps) => {
 
   return (
     <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER}>
-      {outerShape()}
-      {innerRadius > 0 && innerShape()}
+      {outerShape}
+      {innerRadius > 0 && innerShape}
       {segments && [...Array(segments)].map((_, i) => {
         const [cos, sin] = [Math.cos((i / segments) * 6.28 + angleOffset), Math.sin((i / segments) * 6.28 + angleOffset)]
         const [cos2, sin2] = [Math.cos((i / segments) * 6.28 + 1.572 + angleOffset), Math.sin((i / segments) * 6.28 + 1.572 + angleOffset)]
@@ -179,7 +179,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
           </>
         )
       })}
-      {ringShapes()}
+      {ringShapes}
       <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
       {spiderPoints.map((p, i) => (
         <circle key={`data-${i}`} cx={p[0]} cy={p[1]} r={dataPointRadius} />
