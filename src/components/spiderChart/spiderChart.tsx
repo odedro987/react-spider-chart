@@ -1,4 +1,4 @@
-import { useMemo } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 const BUFFER = 10
 
@@ -43,14 +43,20 @@ export type SpiderChartProps = {
     /** Color of data polygon */
     dataColor: string
     /** Stroke color of data polygon */
-    dataStrokeColor?: string
+    dataStrokeColor: string
     /** Stroke color of data polygon */
-    dataFillOpacity?: number
+    dataFillOpacity: number
     /** Radius of data points */
-    dataPointRadius?: number
+    dataPointRadius: number
+    /** Labels of data points */
+    dataPointLabels: string[]
+    /** Class name for data points labels */
+    dataPointLabelClassName: string
+    /** Controls the spacing between the labels and the data points */
+    dataPointLabelGap: number
     /** Number of indicator sections along each segment */
     indicatorSections: number
-    /** Number of indicator sections along each segment */
+    /** Length of indicator sections */
     indicatorSectionLength: number
 }
 
@@ -60,25 +66,34 @@ export const SpiderChart = (props: SpiderChartProps) => {
     strokeWidth = 1,
     strokeColor = "black",
     innerStrokeColor = "black",
+    innerRadius = radius / 10,
     shape = 'circle',
     backgroundColor = "none",
     rings = 0,
-    data = [],
     segments: initialSegments = 0,
     alignSegmentsWithDataPoints = false,
+    data = [],
+    dataPointLabels = [],
     dataColor = "red",
     dataStrokeColor = dataColor,
     dataFillOpacity = 0.5,
-    innerRadius = radius / 10,
     dataPointRadius = 5,
     indicatorSections = 3,
     indicatorSectionLength = 5,
     centerPlacement = 'inner',
-    angleOffset = 0
+    angleOffset = 0,
+    dataPointLabelClassName = undefined,
+    dataPointLabelGap = 0
   } = props
 
-  const segments = useMemo(()=> alignSegmentsWithDataPoints ? data.length : initialSegments, [initialSegments, alignSegmentsWithDataPoints, data.length])
+  const labelRefs = useRef<(HTMLSpanElement|null)[]>([])
 
+  const [labelPositions, setLabelPositions] = useState<DataPoint[]>([...Array(data.length).fill([0,0])])
+  useEffect(()=> {
+    labelRefs.current = labelRefs.current.slice(0, dataPointLabels.length)
+  }, [dataPointLabels.length])
+
+  const segments = useMemo(()=> alignSegmentsWithDataPoints ? data.length : initialSegments, [initialSegments, alignSegmentsWithDataPoints, data.length])
   const center = useMemo(() => radius + strokeWidth + BUFFER, [radius, strokeWidth])
   const centerOffset = useMemo(() => {
     switch(centerPlacement){
@@ -88,17 +103,37 @@ export const SpiderChart = (props: SpiderChartProps) => {
     }
   }, [innerRadius, centerPlacement])
 
-  const spiderPoints = useMemo(() => {
-    return data.map((value, i) => {
+  const [spiderPoints, circumPoints] = useMemo(() => {
+    const res: [DataPoint[], DataPoint[]] = [[], []]
+    data.forEach((value, i) => {
       const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
-      return [
+      res[0].push([
         center + cos * ((radius - centerOffset) * value) + cos * centerOffset,
         center + sin * ((radius - centerOffset) * value) + sin * centerOffset
-      ]
+      ])
+      res[1].push([
+        center + cos * ((radius - centerOffset)) + cos * centerOffset,
+        center + sin * ((radius - centerOffset)) + sin * centerOffset
+      ])
     })
-  }, [data, angleOffset, center, radius, centerOffset])
+    return [res[0], res[1]]
+  }, [data, center, radius, centerOffset, angleOffset])
 
   const spiderPointsString = useMemo(()=> spiderPoints.reduce((acc, curr) => acc + " " + curr.join(","), ""), [spiderPoints])
+
+  useEffect(()=> {
+    const positions: DataPoint[] = []
+    labelRefs.current.forEach((ref, i)=> {
+      const [x, y] = circumPoints[i]
+      if (ref){
+        positions.push([
+          x - (x < (center - radius / 4) ? ref.clientWidth + dataPointLabelGap : x > (center + radius / 4) ? -dataPointLabelGap : ref.clientWidth / 2),
+          y - (y < (center - radius / 4) ? ref.clientHeight + dataPointLabelGap : y > (center + radius / 4) ? -dataPointLabelGap : ref.clientHeight / 2)
+        ])
+      }
+    })
+    setLabelPositions(positions)
+  }, [center, circumPoints, labelRefs, radius, dataPointLabelGap])
 
   const ringShapes = useMemo(()=> {
     if (shape === 'polygon'){
@@ -129,7 +164,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
         return [center + cos * radius, center + sin * radius]
       })
       const pointsString = points.reduce((acc, curr) => acc + " " + curr.join(","), "")
-      return <polygon points={pointsString} fill={'backgroundColor'} stroke={strokeColor} strokeWidth={strokeWidth} />
+      return <polygon points={pointsString} fill={backgroundColor} stroke={strokeColor} strokeWidth={strokeWidth} />
     }
 
     if(shape === "circle") {
@@ -148,43 +183,48 @@ export const SpiderChart = (props: SpiderChartProps) => {
     }
 
     if(shape === "circle") {
-      return <circle cx={center} cy={center} r={innerRadius} stroke={innerStrokeColor} strokeWidth={strokeWidth} fill="none"/>
+      return <circle cx={center} cy={center} r={innerRadius} stroke={innerStrokeColor} strokeWidth={strokeWidth} fill={"none"}/>
     }
   }, [angleOffset, center, centerOffset, data, innerRadius, shape, innerStrokeColor, strokeWidth])
 
   return (
-    <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER}>
-      {outerShape}
-      {innerRadius > 0 && innerShape}
-      {segments && [...Array(segments)].map((_, i) => {
-        const [cos, sin] = [Math.cos((i / segments) * 6.28 + angleOffset), Math.sin((i / segments) * 6.28 + angleOffset)]
-        const [cos2, sin2] = [Math.cos((i / segments) * 6.28 + 1.572 + angleOffset), Math.sin((i / segments) * 6.28 + 1.572 + angleOffset)]
-        return (
-          <>
-            <line x1={center} y1={center} x2={center + cos * radius} y2={center + sin * radius} stroke={innerStrokeColor} strokeWidth={strokeWidth} />
-            {indicatorSections > 0 && [...Array(indicatorSections)].map((_, j) => {
-              const dist = ((j + 1) / (indicatorSections + 1)) * (radius - centerOffset)
-              return (
-                <line
-                  key={`indicator-${i}-${j}`}
-                  x1={center + cos * centerOffset + cos * dist - cos2 * indicatorSectionLength}
-                  y1={center + sin * centerOffset + sin * dist - sin2 * indicatorSectionLength}
-                  x2={center + cos * centerOffset + cos * dist + cos2 * indicatorSectionLength}
-                  y2={center + sin * centerOffset + sin * dist + sin2 * indicatorSectionLength}
-                  stroke={innerStrokeColor}
-                  strokeWidth={strokeWidth}
-                />
-              )
-            })}
-          </>
-        )
+    <>
+      <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER} style={{position: "relative"}}>
+        {outerShape}
+        {innerRadius > 0 && innerShape}
+        {segments && [...Array(segments)].map((_, i) => {
+          const [cos, sin] = [Math.cos((i / segments) * 6.28 + angleOffset), Math.sin((i / segments) * 6.28 + angleOffset)]
+          const [cos2, sin2] = [Math.cos((i / segments) * 6.28 + 1.572 + angleOffset), Math.sin((i / segments) * 6.28 + 1.572 + angleOffset)]
+          return (
+            <>
+              <line x1={center} y1={center} x2={center + cos * radius} y2={center + sin * radius} stroke={innerStrokeColor} strokeWidth={strokeWidth} />
+              {indicatorSections > 0 && [...Array(indicatorSections)].map((_, j) => {
+                const dist = ((j + 1) / (indicatorSections + 1)) * (radius - centerOffset)
+                return (
+                  <line
+                    key={`indicator-${i}-${j}`}
+                    x1={center + cos * centerOffset + cos * dist - cos2 * indicatorSectionLength}
+                    y1={center + sin * centerOffset + sin * dist - sin2 * indicatorSectionLength}
+                    x2={center + cos * centerOffset + cos * dist + cos2 * indicatorSectionLength}
+                    y2={center + sin * centerOffset + sin * dist + sin2 * indicatorSectionLength}
+                    stroke={innerStrokeColor}
+                    strokeWidth={strokeWidth}
+                  />
+                )
+              })}
+            </>
+          )
+        })}
+        {ringShapes}
+        <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
+        {spiderPoints.map((p, i) => (
+          <circle key={`data-${i}`} cx={p[0]} cy={p[1]} r={dataPointRadius} />
+        ))}
+      </svg>
+      {dataPointLabels.map((label, i) => {
+        return <span key={`label-${i}`} className={dataPointLabelClassName} ref={e=> {labelRefs.current[i] = e}} style={{position: "absolute", top: labelPositions[i][1], left: labelPositions[i][0] }}>{label}</span>
       })}
-      {ringShapes}
-      <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
-      {spiderPoints.map((p, i) => (
-        <circle key={`data-${i}`} cx={p[0]} cy={p[1]} r={dataPointRadius} />
-      ))}
-    </svg>
+    </>
   )
 }
 
