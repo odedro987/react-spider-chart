@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useMemo, useRef, useState } from "react"
+import { ReactElement, useEffect, useMemo, useRef, useState } from 'react'
 
 const BUFFER = 10
 
@@ -8,89 +8,110 @@ export type Shape = 'circle' | 'polygon'
 
 export type DataPoint = [number, number]
 
+export type DataProps = {
+  /** Color of data polygon */
+  dataColor?: string
+  /** Stroke color of data polygon */
+  dataStrokeColor?: string
+  /** Stroke pattern of data polygon */
+  dataStrokePattern?: string
+  /** Stroke color of data polygon */
+  dataFillOpacity?: number
+  /** Radius of data points */
+  dataPointRadius?: number
+  /** Labels of data points */
+  dataPointLabels?: string[]
+  /** Class name for data points labels */
+  dataPointLabelClassName?: string
+  /** Controls the spacing between the labels and the data points */
+  dataPointLabelGap?: number
+}
+
+export type ShapeProps = {
+  /** Stroke width of the radiuses */
+  strokeWidth?: number
+  /** Stroke color of the radiuses */
+  strokeColor?: string
+  /** Stroke color of the inner radiuses */
+  innerStrokeColor?: string
+  /** Flag to show inner radius */
+  showInnerRadius?: boolean
+  /** Background color of the radiuses */
+  backgroundColor?: string
+  /** Number of segments */
+  segments?: number
+  /** Number of segments */
+  alignSegmentsWithDataPoints?: boolean
+  /** Number of rings */
+  rings?: number
+  /** Number of indicator sections along each segment */
+  indicatorSections?: number
+  /** Length of indicator sections */
+  indicatorSectionLength?: number
+}
+
 export type SpiderChartProps = {
     /** Radius of the chart */
     radius: number
     /** Inner radius of the chart */
-    innerRadius: number
+    innerRadius?: number
     /** Where the props should be scaled from
      *
      *  'center' - center of the chart
      *
      *  'inner' - offset the radius of the inner circle
      */
-    centerPlacement: CenterPlacement
+    centerPlacement?: CenterPlacement
     /** Shape of the chart */
-    shape: Shape
+    shape?: Shape
     /** Offset for the angle (in radians) */
     angleOffset: number
-    /** Stroke width of the radiuses */
-    strokeWidth: number
-    /** Stroke color of the radiuses */
-    strokeColor: string
-    /** Stroke color of the inner radiuses */
-    innerStrokeColor: string
-    /** Background color of the radiuses */
-    backgroundColor: string
-    /** Number of segments */
-    segments: number
-    /** Number of segments */
-    alignSegmentsWithDataPoints: boolean
-    /** Number of rings */
-    rings: number
     /** Data points (values between 0 and 1) */
     data: number[]
-    /** Color of data polygon */
-    dataColor: string
-    /** Stroke color of data polygon */
-    dataStrokeColor: string
-    /** Stroke pattern of data polygon */
-    dataStrokePattern: string
-    /** Stroke color of data polygon */
-    dataFillOpacity: number
-    /** Radius of data points */
-    dataPointRadius: number
-    /** Labels of data points */
-    dataPointLabels: string[]
-    /** Class name for data points labels */
-    dataPointLabelClassName: string
-    /** Controls the spacing between the labels and the data points */
-    dataPointLabelGap: number
-    /** Number of indicator sections along each segment */
-    indicatorSections: number
-    /** Length of indicator sections */
-    indicatorSectionLength: number
+    /** Props related to data points */
+    dataProps: DataProps
+    /** Props related to chart shape */
+    shapeProps: ShapeProps
     /** Optional SVG <defs> element for custom effects */
     svgDefinitions?: ReactElement<SVGDefsElement>
 }
 
 export const SpiderChart = (props: SpiderChartProps) => {
   const {
-    radius = 100,
-    strokeWidth = 1,
-    strokeColor = "black",
-    innerStrokeColor = "black",
-    innerRadius = radius / 10,
+    radius: initialRadius = 100,
+    innerRadius = initialRadius / 10,
+    shapeProps = {} as ShapeProps,
     shape = 'circle',
-    backgroundColor = "none",
+    data = [],
+    dataProps = {} as DataProps,
+    centerPlacement = 'inner',
+    angleOffset = 0,
+    svgDefinitions
+  } = props
+
+  const {
+    dataColor = 'none',
+    dataStrokeColor = 'black',
+    dataFillOpacity = 0.5,
+    dataPointRadius = 5,
+    dataPointLabels = [],
+    dataStrokePattern = '',
+    dataPointLabelClassName = undefined,
+    dataPointLabelGap = 0
+  } = dataProps
+
+  const {
+    strokeWidth = 1,
+    strokeColor = 'black',
+    innerStrokeColor = 'black',
+    showInnerRadius = true,
+    backgroundColor = 'none',
     rings = 0,
     segments: initialSegments = 0,
     alignSegmentsWithDataPoints = false,
-    data = [],
-    dataPointLabels = [],
-    dataColor = "red",
-    dataStrokeColor = dataColor,
-    dataStrokePattern = "",
-    dataFillOpacity = 0.5,
-    dataPointRadius = 5,
-    indicatorSections = 3,
-    indicatorSectionLength = 5,
-    centerPlacement = 'inner',
-    angleOffset = 0,
-    dataPointLabelClassName = undefined,
-    dataPointLabelGap = 0,
-    svgDefinitions,
-  } = props
+    indicatorSections = 0,
+    indicatorSectionLength = 5
+  } = shapeProps
 
   const labelRefs = useRef<(HTMLSpanElement|null)[]>([])
 
@@ -99,11 +120,12 @@ export const SpiderChart = (props: SpiderChartProps) => {
     labelRefs.current = labelRefs.current.slice(0, dataPointLabels.length)
   }, [dataPointLabels.length])
 
-  const segments = useMemo(()=> alignSegmentsWithDataPoints ? data.length : initialSegments, [initialSegments, alignSegmentsWithDataPoints, data.length])
+  const radius = useMemo(() => initialRadius >= 0 ? initialRadius : 0, [initialRadius])
+  const segments = useMemo(()=> alignSegmentsWithDataPoints ? data.length : initialSegments >= 0 ? initialSegments : 0, [initialSegments, alignSegmentsWithDataPoints, data.length])
   const center = useMemo(() => radius + strokeWidth + BUFFER, [radius, strokeWidth])
   const centerOffset = useMemo(() => {
-    switch(centerPlacement){
-    case "center": return 0
+    switch (centerPlacement){
+    case 'center': return 0
     case 'inner': return innerRadius
     default: return 0
     }
@@ -125,7 +147,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
     return [res[0], res[1]]
   }, [data, center, radius, centerOffset, angleOffset])
 
-  const spiderPointsString = useMemo(()=> spiderPoints.reduce((acc, curr) => acc + " " + curr.join(","), ""), [spiderPoints])
+  const spiderPointsString = useMemo(()=> spiderPoints.reduce((acc, curr) => acc + ' ' + curr.join(','), ''), [spiderPoints])
 
   useEffect(()=> {
     const positions: DataPoint[] = []
@@ -142,6 +164,10 @@ export const SpiderChart = (props: SpiderChartProps) => {
   }, [center, circumPoints, labelRefs, radius, dataPointLabelGap])
 
   const ringShapes = useMemo(()=> {
+    if (rings <= 0) {
+      return null
+    }
+
     if (shape === 'polygon'){
       return [...Array(rings)].map((_, i) => {
         const points = [...Array(segments)].map((_, j)=>{
@@ -150,12 +176,12 @@ export const SpiderChart = (props: SpiderChartProps) => {
 
           return [center + cos * centerOffset + cos * dist, center + sin * centerOffset + sin * dist]
         })
-        const pointsString = points.reduce((acc, curr) => acc + " " + curr.join(","), "")
-        return <polygon key={`ring-${i}`} points={pointsString} fill={'none'} stroke={strokeColor}  strokeWidth={strokeWidth} />
+        const pointsString = points.reduce((acc, curr) => acc + ' ' + curr.join(','), '')
+        return <polygon key={`ring-${i}`} points={pointsString} fill={'none'} stroke={strokeColor} strokeWidth={strokeWidth} />
       })
     }
 
-    if(shape === "circle") {
+    if (shape === 'circle') {
       return [...Array(rings)].map((_, i) => {
         const dist = ((i + 1) / (rings + 1)) * (radius - centerOffset)
         return <circle key={`data-${i}`} cx={center} cy={center} r={dist + centerOffset} stroke={strokeColor} strokeWidth={strokeWidth} fill={'none'} />
@@ -169,11 +195,11 @@ export const SpiderChart = (props: SpiderChartProps) => {
         const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
         return [center + cos * radius, center + sin * radius]
       })
-      const pointsString = points.reduce((acc, curr) => acc + " " + curr.join(","), "")
+      const pointsString = points.reduce((acc, curr) => acc + ' ' + curr.join(','), '')
       return <polygon points={pointsString} fill={backgroundColor} stroke={strokeColor} strokeWidth={strokeWidth} />
     }
 
-    if(shape === "circle") {
+    if (shape === 'circle') {
       return <circle cx={center} cy={center} r={radius} stroke={strokeColor} strokeWidth={strokeWidth} fill={backgroundColor}/>
     }
   }, [angleOffset, backgroundColor, center, data, radius, shape, strokeColor, strokeWidth])
@@ -184,12 +210,12 @@ export const SpiderChart = (props: SpiderChartProps) => {
         const [cos, sin] = [Math.cos((i / data.length) * 6.28 + angleOffset), Math.sin((i / data.length) * 6.28 + angleOffset)]
         return [center + cos * centerOffset, center + sin * centerOffset]
       })
-      const pointsString = points.reduce((acc, curr) => acc + " " + curr.join(","), "")
-      return <polygon points={pointsString} fill={'none'} stroke={innerStrokeColor}  strokeWidth={strokeWidth} />
+      const pointsString = points.reduce((acc, curr) => acc + ' ' + curr.join(','), '')
+      return <polygon points={pointsString} fill={'none'} stroke={innerStrokeColor} strokeWidth={strokeWidth} />
     }
 
-    if(shape === "circle") {
-      return <circle cx={center} cy={center} r={innerRadius} stroke={innerStrokeColor} strokeWidth={strokeWidth} fill={"none"}/>
+    if (shape === 'circle') {
+      return <circle cx={center} cy={center} r={innerRadius} stroke={innerStrokeColor} strokeWidth={strokeWidth} fill={'none'}/>
     }
   }, [angleOffset, center, centerOffset, data, innerRadius, shape, innerStrokeColor, strokeWidth])
 
@@ -219,20 +245,20 @@ export const SpiderChart = (props: SpiderChartProps) => {
 
   return (
     <div>
-      <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER} style={{position: "relative"}}>
+      <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER} style={{position: 'relative'}}>
         {svgDefinitions}
         {outerShape}
-        {innerRadius > 0 && innerShape}
-        {segments && segmentLines}
-        {indicatorSections && indicatorLines}
-        {ringShapes}
+        {showInnerRadius && innerRadius > 0 && innerShape}
+        {segments > 0 && segmentLines}
+        {indicatorSections > 0 && indicatorLines}
+        {rings > 0 && ringShapes}
         <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} strokeDasharray={dataStrokePattern} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
         {spiderPoints.map((p, i) => (
           <circle key={`data-${i}`} cx={p[0]} cy={p[1]} r={dataPointRadius} />
         ))}
       </svg>
       {dataPointLabels.map((label, i) => {
-        return <span key={`label-${i}`} className={dataPointLabelClassName} ref={e=> {labelRefs.current[i] = e}} style={{position: "absolute", top: labelPositions[i][1], left: labelPositions[i][0] }}>{label}</span>
+        return <span key={`label-${i}`} className={dataPointLabelClassName} ref={e=> {labelRefs.current[i] = e}} style={{position: 'absolute', top: labelPositions[i][1], left: labelPositions[i][0] }}>{label}</span>
       })}
     </div>
   )
@@ -241,19 +267,19 @@ export const SpiderChart = (props: SpiderChartProps) => {
 export type UseSpiderChartProps = {
   data: number[]
   radius: number
-  strokeWidth: number
-  centerPlacement: CenterPlacement
-  innerRadius: number
+  strokeWidth?: number
+  centerPlacement?: CenterPlacement
+  innerRadius?: number
   angleOffset: number
 }
 
 export const useSpiderChart = (props: UseSpiderChartProps) => {
-  const {data, radius, strokeWidth, centerPlacement, innerRadius, angleOffset} = props
+  const {data, radius, strokeWidth = 2, centerPlacement = 'inner', innerRadius = radius / 10, angleOffset} = props
 
   const center = useMemo(() => radius + strokeWidth + BUFFER, [radius, strokeWidth])
   const centerOffset = useMemo(() => {
-    switch(centerPlacement){
-    case "center": return 0
+    switch (centerPlacement){
+    case 'center': return 0
     case 'inner': return innerRadius
     default: return 0
     }

@@ -1,26 +1,35 @@
 {
-    "env": {
-        "jest": true,
-        "browser": true
-    },
-    "ignorePatterns": ["dist"],
-    "root": true,
-    "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint"],
-    "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:react-hooks/recommended",
-        "plugin:storybook/recommended"
-    ],
-    "rules": {
-        "react/react-in-jsx-scope": "off",
-        "array-element-newline": ["error", { "ArrayExpression": "consistent" }],
-        "indent": ["error", 2],
-        "no-trailing-spaces": ["error"],
-        "semi": ["error", "never"],
-        "space-infix-ops": "error"
-    }
+  "env": {
+    "jest": true,
+    "browser": true
+  },
+  "ignorePatterns": ["dist"],
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:react-hooks/recommended",
+    "plugin:storybook/recommended"
+  ],
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "array-element-newline": ["error", { "ArrayExpression": "consistent" }],
+    "indent": ["error", 2],
+    "no-trailing-spaces": ["error"],
+    "semi": ["error", "never"],
+    "space-infix-ops": ["error", { "int32Hint": false }],
+    "keyword-spacing": ["error", { "before": true, "after": true }],
+    "quotes": ["error", "single"],
+    "comma-dangle": "error",
+    "sort-imports": "error",
+    "no-duplicate-imports": "error",
+    "eqeqeq": "warn",
+    "dot-notation": "error",
+    "no-multi-spaces": "error",
+    "no-multiple-empty-lines": ["error", { "max": 1 }]
+  }
 }
