@@ -193,35 +193,38 @@ export const SpiderChart = (props: SpiderChartProps) => {
     }
   }, [angleOffset, center, centerOffset, data, innerRadius, shape, innerStrokeColor, strokeWidth])
 
+  const [segmentLines, indicatorLines] = useMemo(()=> {
+    const [segmentLines, indicatorLines]: [JSX.Element[],JSX.Element[]] = [[], []]
+    for (let i = 0; i < segments; i++) {
+      const [cos, sin] = [Math.cos((i / segments) * 6.28 + angleOffset), Math.sin((i / segments) * 6.28 + angleOffset)]
+      const [cos2, sin2] = [Math.cos((i / segments) * 6.28 + 1.572 + angleOffset), Math.sin((i / segments) * 6.28 + 1.572 + angleOffset)]
+      segmentLines.push(<line x1={center} y1={center} x2={center + cos * radius} y2={center + sin * radius} stroke={innerStrokeColor} strokeWidth={strokeWidth} />)
+      for (let j = 0; j < indicatorSections; j++) {
+        [...Array(indicatorSections)].map((_, j) => {
+          const dist = ((j + 1) / (indicatorSections + 1)) * (radius - centerOffset)
+          indicatorLines.push( <line
+            key={`indicator-${i}-${j}`}
+            x1={center + cos * centerOffset + cos * dist - cos2 * indicatorSectionLength}
+            y1={center + sin * centerOffset + sin * dist - sin2 * indicatorSectionLength}
+            x2={center + cos * centerOffset + cos * dist + cos2 * indicatorSectionLength}
+            y2={center + sin * centerOffset + sin * dist + sin2 * indicatorSectionLength}
+            stroke={innerStrokeColor}
+            strokeWidth={strokeWidth}
+          />)
+        })
+      }
+    }
+    return [segmentLines, indicatorLines]
+  }, [angleOffset, center, centerOffset, indicatorSectionLength, indicatorSections, innerStrokeColor, radius, segments, strokeWidth])
+
   return (
     <div>
       <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER} style={{position: "relative"}}>
         {svgDefinitions}
         {outerShape}
         {innerRadius > 0 && innerShape}
-        {segments && [...Array(segments)].map((_, i) => {
-          const [cos, sin] = [Math.cos((i / segments) * 6.28 + angleOffset), Math.sin((i / segments) * 6.28 + angleOffset)]
-          const [cos2, sin2] = [Math.cos((i / segments) * 6.28 + 1.572 + angleOffset), Math.sin((i / segments) * 6.28 + 1.572 + angleOffset)]
-          return (
-            <>
-              <line x1={center} y1={center} x2={center + cos * radius} y2={center + sin * radius} stroke={innerStrokeColor} strokeWidth={strokeWidth} />
-              {indicatorSections > 0 && [...Array(indicatorSections)].map((_, j) => {
-                const dist = ((j + 1) / (indicatorSections + 1)) * (radius - centerOffset)
-                return (
-                  <line
-                    key={`indicator-${i}-${j}`}
-                    x1={center + cos * centerOffset + cos * dist - cos2 * indicatorSectionLength}
-                    y1={center + sin * centerOffset + sin * dist - sin2 * indicatorSectionLength}
-                    x2={center + cos * centerOffset + cos * dist + cos2 * indicatorSectionLength}
-                    y2={center + sin * centerOffset + sin * dist + sin2 * indicatorSectionLength}
-                    stroke={innerStrokeColor}
-                    strokeWidth={strokeWidth}
-                  />
-                )
-              })}
-            </>
-          )
-        })}
+        {segments && segmentLines}
+        {indicatorSections && indicatorLines}
         {ringShapes}
         <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} strokeDasharray={dataStrokePattern} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
         {spiderPoints.map((p, i) => (
