@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { ReactElement, useEffect, useMemo, useRef, useState } from "react"
 
 const BUFFER = 10
 
@@ -44,6 +44,8 @@ export type SpiderChartProps = {
     dataColor: string
     /** Stroke color of data polygon */
     dataStrokeColor: string
+    /** Stroke pattern of data polygon */
+    dataStrokePattern: string
     /** Stroke color of data polygon */
     dataFillOpacity: number
     /** Radius of data points */
@@ -58,6 +60,8 @@ export type SpiderChartProps = {
     indicatorSections: number
     /** Length of indicator sections */
     indicatorSectionLength: number
+    /** Optional SVG <defs> element for custom effects */
+    svgDefinitions?: ReactElement<SVGDefsElement>
 }
 
 export const SpiderChart = (props: SpiderChartProps) => {
@@ -76,6 +80,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
     dataPointLabels = [],
     dataColor = "red",
     dataStrokeColor = dataColor,
+    dataStrokePattern = "",
     dataFillOpacity = 0.5,
     dataPointRadius = 5,
     indicatorSections = 3,
@@ -83,7 +88,8 @@ export const SpiderChart = (props: SpiderChartProps) => {
     centerPlacement = 'inner',
     angleOffset = 0,
     dataPointLabelClassName = undefined,
-    dataPointLabelGap = 0
+    dataPointLabelGap = 0,
+    svgDefinitions,
   } = props
 
   const labelRefs = useRef<(HTMLSpanElement|null)[]>([])
@@ -188,8 +194,9 @@ export const SpiderChart = (props: SpiderChartProps) => {
   }, [angleOffset, center, centerOffset, data, innerRadius, shape, innerStrokeColor, strokeWidth])
 
   return (
-    <>
+    <div>
       <svg height={center * 2 + BUFFER} width={center * 2 + BUFFER} style={{position: "relative"}}>
+        {svgDefinitions}
         {outerShape}
         {innerRadius > 0 && innerShape}
         {segments && [...Array(segments)].map((_, i) => {
@@ -216,7 +223,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
           )
         })}
         {ringShapes}
-        <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
+        <polygon points={spiderPointsString} fill={dataColor} stroke={dataStrokeColor} strokeDasharray={dataStrokePattern} fillOpacity={dataFillOpacity} strokeWidth={strokeWidth} />
         {spiderPoints.map((p, i) => (
           <circle key={`data-${i}`} cx={p[0]} cy={p[1]} r={dataPointRadius} />
         ))}
@@ -224,7 +231,7 @@ export const SpiderChart = (props: SpiderChartProps) => {
       {dataPointLabels.map((label, i) => {
         return <span key={`label-${i}`} className={dataPointLabelClassName} ref={e=> {labelRefs.current[i] = e}} style={{position: "absolute", top: labelPositions[i][1], left: labelPositions[i][0] }}>{label}</span>
       })}
-    </>
+    </div>
   )
 }
 
